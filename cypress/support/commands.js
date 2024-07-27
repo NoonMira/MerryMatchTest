@@ -24,3 +24,11 @@ import 'cypress-file-upload';
 //
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
+Cypress.Commands.add('login', (username, password) => {
+    cy.visit('http://localhost:5173/login'); 
+    cy.get('#username-email').type(username);
+    cy.get('#password').type(password);
+    cy.get('#login-btn').click();
+   
+    cy.url().should('not.include', '/login'); 
+  });

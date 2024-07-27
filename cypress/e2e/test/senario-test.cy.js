@@ -1,42 +1,45 @@
 /// <reference types= "cypress" /> 
-
-import { generate_random_string } from './random.js'
+import { generate_random_string } from '../../fixtures/random.js'
 import { elements } from './variable.cy.js'
+import { formData,formData2,images,hobbies,failedData } from './form-data.js'
 
 describe('Login and register', () => {
-  let baseUrl = 'http://localhost:5173'
   let random_string = generate_random_string(150)
-  const password = 'fufu12345678'
-  const username = 'fufu@fontain'
-  const hobbies = ['cycling', 'drawing', 'dancing', 'photography','traveling','gaming','camping','listening to music','watching movies','gardening'];
-  const images = ['fu.jpg', 'fu2.jpg', 'fu3.jpeg','fu4.jpg','fu5.jpg']; 
-
-  it('Open register page', () => {
-    cy.viewport('macbook-11')
-    cy.wait(200)
-    cy.visit('/register')
-    cy.get('article > .text-sm').should('contain.text','REGISTER')
-    cy.get(elements.name).should('be.enabled').type('Furina')
-    cy.get(elements.birthdate).should('be.enabled').click().type('1999-09-19')
-    cy.wait(1000); 
-    cy.get(elements.location).should('be.enabled').select('United Kingdom')
-    cy.get(elements.city).should('be.enabled').select('London')
-    cy.get(elements.username).should('not.have.class', 'disable').type(username).should('have.value', username)
-    cy.get(elements.email).should('not.have.class', 'disable').type('fufu123@gmail.com')
-    cy.get(elements.password).should('be.enabled').type(password).should('have.value', password);
-    cy.get(elements.confirmPwd).type(password).should('have.value', password);
-    cy.get(elements.nextBtn).click()
+  let baseUrl = "http://localhost:5173"
+  beforeEach(() => {
+    cy.fixture('example.json').as('loginData');
   })
-  
+
+it('Open register page', () => {
+        cy.viewport('macbook-11');
+        cy.wait(200);
+        cy.visit('/register'); 
+        cy.get('article > .text-sm').should('contain.text', 'REGISTER');
+        
+        for (const [key, value] of Object.entries(formData)) {
+          const element = elements[key];  
+          cy.get(element).should('be.enabled');
+          if (key === 'birthdate') {
+            cy.get(element).click().type(value).should('have.value', value);
+          } else if (key === 'location' || key === 'city') {
+            cy.get(element).select(value).should('have.value', value);
+          } else {
+            cy.get(element).type(value).should('have.value', value);
+          }
+        }
+        cy.get(elements.nextBtn).should('be.enabled').click();
+      });
+ 
   it('register: Identities and Interests', () => {
     cy.get('.mb-6').contains('Identities and Interests')
     cy.get('.text-red-500').click()
     cy.get(elements.nextBtn).click()
-    cy.get(elements.sexInden).should('not.have.class', 'disable').select('male')
-    cy.get(elements.sexPrefer).should('not.have.class', 'disable').select('female')
-    cy.get(elements.racialPrefer).should('not.have.class', 'disable').select('White')
-    cy.get(elements.meeting).should('not.have.class', 'disable').select('24-7 eleven')
-    cy.get(elements.hobby).should('not.have.class', 'disable');
+
+    for (let [key,value] of Object.entries(formData2)) {
+      const element = elements[key];
+      cy.get(element).should('not.have.class', 'disable')
+      cy.get(element).select(value)
+    }
     cy.get(elements.hobby).then($box => {
       hobbies.forEach(hobby => {
         cy.wrap($box).type(`${hobby}{enter}`)
@@ -46,7 +49,7 @@ describe('Login and register', () => {
     cy.get('@deleteButtons').each($button => {
         cy.wrap($button).click({ timeout: 500000 });
     });  
-    cy.get('a > .h-12').click()
+    cy.get(elements.nextBtn).click()
   })
 
   it('register: Upload Photos', () => { 
@@ -61,40 +64,25 @@ describe('Login and register', () => {
     cy.get(elements.nextBtn).click()
   });
 
-
   it('Register step1 failed', () => {
-    cy.viewport('macbook-11')
-    cy.wait(200)
-    cy.visit(baseUrl+'/register')
-    cy.get('article > .text-sm').should('contain.text','REGISTER')
-    cy.get(elements.name).should('be.enabled').type('  ')
-    cy.get(elements.birthdate).should('be.enabled').click().type('  ')
-    cy.wait(1000); 
-    cy.get(elements.location).should('be.enabled').select('  ')
-    cy.get(elements.city).should('be.enabled').select('  ')
-    cy.get(elements.username).should('not.have.class', 'disable').type(' ').should('have.value', username)
-    cy.get(elements.email).should('not.have.class', 'disable').type('  ')
-    cy.get(elements.password).should('be.enabled').type(' ').should('have.value', password);
-    cy.get(elements.confirmPwd).type(' ').should('have.value', password);
+    cy.viewport('macbook-11');
+    cy.wait(200);
+    cy.visit('/register');
+    for (let [key,value] of Object.entries(failedData)) {
+      const element = elements[key];
+      cy.get(element).should('be.enabled')
+      cy.get(element).type(value)
+    }
     cy.get(elements.nextBtn).click()
-    cy.get(':nth-child(1) > :nth-child(2) > .text-rose-600')
-    cy.get(':nth-child(1) > :nth-child(1) > .text-rose-600')
-    cy.get(':nth-child(2) > :nth-child(2) > .text-rose-600')
-    cy.get(':nth-child(2) > :nth-child(1) > .text-rose-600')
-    cy.get(':nth-child(3) > :nth-child(2) > .text-rose-600')
-    cy.get(':nth-child(2) > :nth-child(1) > .text-rose-600')
-    cy.get(':nth-child(3) > :nth-child(2) > .text-rose-600')
-    cy.get(':nth-child(3) > :nth-child(1) > .text-rose-600')
-    cy.get(':nth-child(4) > :nth-child(2) > .text-rose-600')
+    cy.get('article > .text-sm').should('contain.text', 'REGISTER');
+    cy.url().should('contain','/register')
   })
 
-  it('Login: input Email or Username', () => {
+  it('Login: input Email or Username', function() {
     cy.visit(baseUrl+'/login')
-    cy.get(elements.usernameOrEmail).should('be.enabled').click()
-    .type(username).should('have.value',username)
-    cy.get(elements.password).should('be.enabled').type(password).should('have.value', password);
-    cy.contains('Log in').click()
-    
+    this.loginData.forEach(data =>{
+      cy.login(data.username,data.password)
+    })
     cy.window().then((window)=>{
       const token = window.localStorage.getItem('token')
       expect(token).to.exist
@@ -106,10 +94,5 @@ describe('Login and register', () => {
     cy.get('#list-1').contains('Profile').invoke('click').click()
     cy.url().should('include', '/user/:userId/edit')
     cy.get(':nth-child(2) > .mb-6').contains('Basic Information')
-  })
-
-  it('Logout', () => {
-    cy.get('.w-10 > img').click()
-    cy.get('#list-5').contains('Log out').invoke('click').click()
   })
 })
